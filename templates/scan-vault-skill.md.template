@@ -1,0 +1,32 @@
+---
+name: scan-vault
+description: Sync the Obsidian vault to AAAK format. Scans for new/updated markdown files and converts them to compressed AAAK summaries.
+---
+
+Sync the Obsidian vault to AAAK memory format.
+
+First, check whether `OBSIDIAN_VAULT_PATH` is set:
+
+```bash
+echo "${OBSIDIAN_VAULT_PATH:-NOT_SET}"
+```
+
+If it is `NOT_SET`, stop and tell the user:
+> `OBSIDIAN_VAULT_PATH` is not set. Add it to your shell profile (`~/.zshrc` or `~/.bashrc`):
+> ```
+> export OBSIDIAN_VAULT_PATH=/path/to/your/vault
+> ```
+> Then restart your shell and re-invoke `/scan-vault`.
+
+If it is set, run:
+
+```bash
+aaak-scan --verbose
+```
+
+After running, report:
+- How many files were newly converted
+- How many files were updated (mtime changed)
+- How many files were skipped (already current)
+- Any errors encountered
+- The location of the updated index: `$OBSIDIAN_VAULT_PATH/aaak/aaak_index.md`
