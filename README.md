@@ -27,6 +27,21 @@ AAAK encoding is provided by [`dialect.py`](https://github.com/milla-jovovich/me
 npm install -g aaak-vault-sync
 ```
 
+### Global install quickstart
+
+```bash
+npm install -g aaak-vault-sync
+export OBSIDIAN_VAULT_PATH=/path/to/your/vault
+aaak-setup
+aaak-scan --verbose
+```
+
+For Claude Code integration:
+
+```bash
+aaak-setup --target claude
+```
+
 Or clone and install locally:
 
 ```bash
@@ -53,6 +68,14 @@ source ~/.zshrc
 
 ### 2. Run setup
 
+If you installed the package globally, use the global setup command:
+
+```bash
+aaak-setup
+```
+
+If you're working from a local clone of the repo, you can also use:
+
 ```bash
 npm run setup
 ```
@@ -65,6 +88,12 @@ This installs two generic things:
 | generic memory-loader prompt | `~/.aaak/generic-memory-loader.md` |
 
 Optional Claude integration:
+
+```bash
+aaak-setup --target claude
+```
+
+From a local clone, this also works:
 
 ```bash
 npm run setup -- --target claude
@@ -278,7 +307,8 @@ The `$VAULT/aaak/` directory is not removed, so your AAAK files stay in the vaul
 ```
 aaak-vault-sync/
 ├── bin/
-│   └── aaak-scan.js          ← CLI entry point (Node shim → python scan.py)
+│   ├── aaak-scan.js          ← CLI entry point (Node shim → python scan.py)
+│   └── aaak-setup.js         ← Global setup command
 ├── scripts/
 │   └── setup.js              ← Installs plist, skill, CLAUDE.md rule
 ├── templates/

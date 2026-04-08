@@ -10,11 +10,14 @@
  *   3. optional Claude files → ~/.claude/skills/scan-vault/SKILL.md and ~/.claude/CLAUDE.md
  *
  * Usage:
+ *   aaak-setup
+ *   aaak-setup --target none
+ *   aaak-setup --target claude
  *   npm run setup
  *   node scripts/setup.js
  *   node scripts/setup.js --target none
  *   node scripts/setup.js --target claude
- *   OBSIDIAN_VAULT_PATH=/path/to/vault node scripts/setup.js --target claude
+ *   OBSIDIAN_VAULT_PATH=/path/to/vault aaak-setup --target claude
  */
 
 const fs = require('fs');
@@ -192,7 +195,7 @@ function main() {
   if (!vaultPath) {
     log('1. Add to ~/.zshrc (or ~/.bashrc):');
     log('     export OBSIDIAN_VAULT_PATH=/path/to/your/vault');
-    log('   Then re-run: npm run setup');
+    log('   Then re-run: aaak-setup');
     log('');
   }
   if (PLATFORM === 'darwin') {

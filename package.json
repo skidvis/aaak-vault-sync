@@ -1,13 +1,14 @@
 {
   "name": "aaak-vault-sync",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Sync an Obsidian vault to AAAK memory format for LLM context loading",
   "license": "MIT",
   "engines": {
     "node": ">=14"
   },
   "bin": {
-    "aaak-scan": "bin/aaak-scan.js"
+    "aaak-scan": "bin/aaak-scan.js",
+    "aaak-setup": "bin/aaak-setup.js"
   },
   "scripts": {
     "setup": "node scripts/setup.js"
