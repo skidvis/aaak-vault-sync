@@ -1,0 +1,13 @@
+# AAAK Memory Loader
+
+Use these instructions in any LLM system prompt, agent profile, or custom instructions.
+
+If `OBSIDIAN_VAULT_PATH` is set and `$OBSIDIAN_VAULT_PATH/aaak/aaak_index.md` exists:
+
+1. Read `$OBSIDIAN_VAULT_PATH/aaak/aaak_index.md`
+2. Scan the Topics column for entries relevant to the current task
+3. Read the linked AAAK files for compressed summaries
+4. If more detail is needed, follow each `SOURCE:` line back to the original markdown
+5. If tooling prefers structured data, use `$OBSIDIAN_VAULT_PATH/aaak/aaak_index.json` instead
+
+If the vault path or index files do not exist, skip silently.

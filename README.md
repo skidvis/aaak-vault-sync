@@ -1,6 +1,6 @@
 # aaak-vault-sync
 
-Sync your Obsidian vault to AAAK format for LLM memory loading. Converts markdown files into compact symbolic summaries that Claude (or any LLM) can scan at session start to load relevant context from your vault.
+Sync your Obsidian vault to AAAK format for LLM memory loading. Converts markdown files into compact symbolic summaries that any LLM can scan to load relevant context from your vault.
 
 AAAK encoding is provided by [`dialect.py`](https://github.com/milla-jovovich/mempalace/blob/main/mempalace/dialect.py) from the [mempalace](https://github.com/milla-jovovich/mempalace) project.
 
@@ -8,8 +8,9 @@ AAAK encoding is provided by [`dialect.py`](https://github.com/milla-jovovich/me
 
 1. `aaak-scan` walks your Obsidian vault and converts each `.md` file to AAAK format using `dialect.py` — a lossy summarization that extracts entities, topics, key sentences, emotions, and flags into a token-efficient representation
 2. Output files are written to `$VAULT/aaak/` alongside a human/LLM-readable index (`aaak_index.md`)
-3. A global CLAUDE.md rule tells Claude to check the index at session start and follow relevant entries to their AAAK summaries (or the original markdown if needed)
-4. A launchd agent (macOS) keeps the index updated hourly in the background
+3. A generic prompt template can be used with any LLM to check the index and follow relevant entries to their AAAK summaries (or the original markdown if needed)
+4. An optional Claude integration can install a skill and CLAUDE.md rule
+5. A launchd agent (macOS) keeps the index updated hourly in the background
 
 **AAAK is lossy** — it summarizes, not compresses. The original files are always preserved. AAAK files point back to their source via a `SOURCE:` header line.
 
@@ -17,8 +18,8 @@ AAAK encoding is provided by [`dialect.py`](https://github.com/milla-jovovich/me
 
 - Python 3.7+
 - Node.js 14+ (for the CLI shim and setup script)
-- macOS (for the launchd scheduler — Linux/Windows users can set up a cron job manually)
-- [Claude Code](https://claude.ai/code) (for the `/scan-vault` skill and CLAUDE.md memory rule)
+- macOS (for the launchd scheduler, Linux/Windows users can set up a cron job manually)
+- Optional: [Claude Code](https://claude.ai/code) if you want the `/scan-vault` skill and CLAUDE.md memory rule
 
 ## Installation
 
@@ -56,11 +57,23 @@ source ~/.zshrc
 npm run setup
 ```
 
-This installs three things:
+This installs two generic things:
 
 | What | Where |
 |------|-------|
 | launchd agent (hourly sync) | `~/Library/LaunchAgents/com.aaak.vault-sync.plist` |
+| generic memory-loader prompt | `~/.aaak/generic-memory-loader.md` |
+
+Optional Claude integration:
+
+```bash
+npm run setup -- --target claude
+```
+
+That also installs:
+
+| What | Where |
+|------|-------|
 | Claude Code skill (`/scan-vault`) | `~/.claude/skills/scan-vault/SKILL.md` |
 | CLAUDE.md memory rule | `~/.claude/CLAUDE.md` (appended) |
 
@@ -76,7 +89,7 @@ launchctl load ~/Library/LaunchAgents/com.aaak.vault-sync.plist
 aaak-scan --verbose
 ```
 
-This scans your vault, generates AAAK files in `$VAULT/aaak/`, and writes the index.
+This scans your vault, generates AAAK files in `$VAULT/aaak/`, and writes both `aaak_index.md` and `aaak_index.json`.
 
 ## Usage
 
@@ -99,6 +112,20 @@ aaak-scan --force
 aaak-scan --dry-run --verbose
 ```
 
+### Generic LLM integration
+
+After setup, you can use this prompt file with any LLM app that supports system prompts or custom instructions:
+
+- `~/.aaak/generic-memory-loader.md`
+
+That prompt tells the model to:
+
+1. Read `$OBSIDIAN_VAULT_PATH/aaak/aaak_index.md`
+2. Scan the Topics column for relevant entries
+3. Read linked AAAK summaries
+4. Fall back to original markdown via `SOURCE:` if needed
+5. Optionally use `aaak_index.json` for structured tooling
+
 ### Claude Code skill
 
 Once setup is complete, invoke from any Claude Code session:
@@ -111,7 +138,9 @@ Reports how many files were converted, updated, or skipped.
 
 ### Memory loading
 
-After setup, every Claude Code session automatically:
+For any LLM, use the generated prompt file at `~/.aaak/generic-memory-loader.md`.
+
+If you installed the Claude integration, every Claude Code session automatically:
 
 1. Reads `$OBSIDIAN_VAULT_PATH/aaak/aaak_index.md`
 2. Scans the Topics column for entries relevant to the current task
@@ -128,6 +157,7 @@ After the first sync, your vault will contain:
 your-vault/
 └── aaak/
     ├── aaak_index.md          ← LLM-readable index + embedded JSON for sync tracking
+    ├── aaak_index.json        ← Tool-friendly structured index
     ├── entities.json          ← Auto-detected proper noun → code mappings
     ├── note-title.aaak.md     ← Compressed AAAK summary of note-title.md
     └── folder--nested.aaak.md ← Nested paths use -- as separator
@@ -241,7 +271,7 @@ rm -rf ~/.claude/skills/scan-vault
 npm uninstall -g aaak-vault-sync
 ```
 
-The `$VAULT/aaak/` directory is not removed — your AAAK files stay in the vault.
+The `$VAULT/aaak/` directory is not removed, so your AAAK files stay in the vault.
 
 ## Project structure
 

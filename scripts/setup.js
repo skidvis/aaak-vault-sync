@@ -5,14 +5,16 @@
  * aaak-vault-sync setup
  *
  * Installs:
- *   1. launchd agent  → ~/Library/LaunchAgents/com.aaak.vault-sync.plist
- *   2. Claude skill   → ~/.claude/skills/scan-vault/SKILL.md
- *   3. CLAUDE.md rule → ~/.claude/CLAUDE.md  (appended if missing)
+ *   1. launchd agent         → ~/Library/LaunchAgents/com.aaak.vault-sync.plist
+ *   2. generic prompt file   → ~/.aaak/generic-memory-loader.md
+ *   3. optional Claude files → ~/.claude/skills/scan-vault/SKILL.md and ~/.claude/CLAUDE.md
  *
  * Usage:
  *   npm run setup
  *   node scripts/setup.js
- *   OBSIDIAN_VAULT_PATH=/path/to/vault node scripts/setup.js
+ *   node scripts/setup.js --target none
+ *   node scripts/setup.js --target claude
+ *   OBSIDIAN_VAULT_PATH=/path/to/vault node scripts/setup.js --target claude
  */
 
 const fs = require('fs');
@@ -32,9 +34,12 @@ const CLAUDE_DIR        = path.join(HOME, '.claude');
 const SKILLS_DIR        = path.join(CLAUDE_DIR, 'skills', 'scan-vault');
 const SKILL_DEST        = path.join(SKILLS_DIR, 'SKILL.md');
 const CLAUDE_MD_PATH    = path.join(CLAUDE_DIR, 'CLAUDE.md');
+const AAAK_DIR          = path.join(HOME, '.aaak');
+const GENERIC_PROMPT_DEST = path.join(AAAK_DIR, 'generic-memory-loader.md');
 
 const PLIST_TEMPLATE    = path.join(PACKAGE_ROOT, 'templates', 'com.aaak.vault-sync.plist.template');
 const SKILL_TEMPLATE    = path.join(PACKAGE_ROOT, 'templates', 'scan-vault-skill.md.template');
+const GENERIC_PROMPT_TEMPLATE = path.join(PACKAGE_ROOT, 'templates', 'generic-memory-loader.md.template');
 const SCAN_PY           = path.join(PACKAGE_ROOT, 'scan.py');
 
 // ── Helpers ────────────────────────────────────────────────────────────────
@@ -88,6 +93,14 @@ function installLaunchdAgent(vaultPath, python) {
     log(`Vault path: ${vaultPath}`);
     log(`To activate: launchctl load "${PLIST_DEST}"`);
   }
+}
+
+function installGenericPromptFile() {
+  ensureDir(AAAK_DIR);
+  const prompt = fs.readFileSync(GENERIC_PROMPT_TEMPLATE, 'utf8');
+  fs.writeFileSync(GENERIC_PROMPT_DEST, prompt);
+  ok(`Generic prompt installed: ${GENERIC_PROMPT_DEST}`);
+  log('Use this file with any LLM that supports system prompts or custom instructions');
 }
 
 function installClaudeSkill() {
@@ -152,16 +165,28 @@ function main() {
 
   const vaultPath = process.env.OBSIDIAN_VAULT_PATH || '';
   const python    = findPython();
+  const args = process.argv.slice(2);
+  const targetIdx = args.indexOf('--target');
+  const target = targetIdx >= 0 && args[targetIdx + 1] ? args[targetIdx + 1] : 'none';
 
   log(`scan.py:  ${SCAN_PY}`);
   log(`python3:  ${python}`);
-  log(`vault:    ${vaultPath || '(not set — OBSIDIAN_VAULT_PATH is empty)'}\n`);
+  log(`vault:    ${vaultPath || '(not set; OBSIDIAN_VAULT_PATH is empty)'}`);
+  log(`target:   ${target}\n`);
 
   installLaunchdAgent(vaultPath, python);
   console.log('');
-  installClaudeSkill();
-  console.log('');
-  installClaudeMdRule();
+  installGenericPromptFile();
+
+  if (target === 'claude') {
+    console.log('');
+    installClaudeSkill();
+    console.log('');
+    installClaudeMdRule();
+  } else {
+    console.log('');
+    log('Skipping Claude-specific integration. Use --target claude to install it.');
+  }
 
   console.log(bold('\nNext steps:'));
   if (!vaultPath) {
@@ -180,6 +205,9 @@ function main() {
     log(`${vaultPath ? '1' : '2'}. Run a manual sync to verify:`);
   }
   log('     aaak-scan --verbose');
+  log('');
+  log(`${vaultPath ? '3' : '4'}. Reuse this prompt with any LLM:`);
+  log(`     ${GENERIC_PROMPT_DEST}`);
   console.log('');
 }
 

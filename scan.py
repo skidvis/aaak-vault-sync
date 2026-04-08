@@ -28,6 +28,7 @@ from dialect import Dialect
 
 AAAK_SUBDIR = "aaak"
 INDEX_FILENAME = "aaak_index.md"
+INDEX_JSON_FILENAME = "aaak_index.json"
 ENTITIES_FILENAME = "entities.json"
 
 
@@ -124,8 +125,9 @@ def load_index(aaak_dir: Path) -> dict:
 
 def save_index(aaak_dir: Path, index: dict, dry_run: bool = False) -> None:
     """
-    Write aaak_index.md with a human/LLM-readable markdown table
-    and an embedded JSON block for machine parsing on the next run.
+    Write both:
+    - aaak_index.md for humans and text-native LLMs
+    - aaak_index.json for tooling and provider-agnostic integrations
     """
     entries = sorted(index.values(), key=lambda e: e["source"])
 
@@ -162,13 +164,24 @@ def save_index(aaak_dir: Path, index: dict, dry_run: bool = False) -> None:
         "-->",
     ]
 
-    content = "\n".join(lines) + "\n"
+    md_content = "\n".join(lines) + "\n"
+    json_content = json.dumps(
+        {
+            "version": 1,
+            "generated_at": datetime.now(timezone.utc).isoformat(),
+            "entries": entries,
+        },
+        indent=2,
+        sort_keys=True,
+    ) + "\n"
 
     if dry_run:
         print(f"[dry-run] Would write {aaak_dir / INDEX_FILENAME} ({len(entries)} entries)")
+        print(f"[dry-run] Would write {aaak_dir / INDEX_JSON_FILENAME} ({len(entries)} entries)")
         return
 
-    (aaak_dir / INDEX_FILENAME).write_text(content)
+    (aaak_dir / INDEX_FILENAME).write_text(md_content)
+    (aaak_dir / INDEX_JSON_FILENAME).write_text(json_content)
 
 
 # === VAULT WALKER ===
