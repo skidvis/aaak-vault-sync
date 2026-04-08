@@ -7,7 +7,7 @@
     "node": ">=14"
   },
   "bin": {
-    "aaak-scan": "./bin/aaak-scan.js"
+    "aaak-scan": "bin/aaak-scan.js"
   },
   "scripts": {
     "setup": "node scripts/setup.js"
