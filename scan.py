@@ -304,7 +304,7 @@ def convert_file(
 
     if not dry_run:
         aaak_path.parent.mkdir(parents=True, exist_ok=True)
-        aaak_path.write_text(full_output)
+        aaak_path.write_text(full_output, encoding="utf-8")
 
     summary = _extract_index_summary(aaak_content)
 
