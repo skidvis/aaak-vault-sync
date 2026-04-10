@@ -16,6 +16,7 @@ import os
 import sys
 import json
 import re
+import errno
 import argparse
 from pathlib import Path
 from datetime import datetime, timezone
@@ -202,7 +203,11 @@ def find_candidates(vault_path: Path, index: dict, force: bool = False) -> list:
             continue
 
         rel_path = str(md_file.relative_to(vault_path))
-        mtime = md_file.stat().st_mtime
+        try:
+            mtime = md_file.stat().st_mtime
+        except OSError:
+            candidates.append(md_file)
+            continue
 
         if force or rel_path not in index:
             candidates.append(md_file)
@@ -262,8 +267,20 @@ def convert_file(
     try:
         content = md_file.read_text(errors="replace")
     except OSError as e:
-        print(f"[warn] Could not read {rel_path}: {e}")
-        return None
+        if e.errno == errno.EINVAL:
+            # Some FUSE/WebDAV mounts (e.g. davfs2) fail with EINVAL when opening
+            # files whose names contain spaces, due to WebDAV locking issues.
+            # Try passing the path as raw bytes to bypass Python's unicode converter.
+            try:
+                with open(os.fsencode(md_file), encoding="utf-8", errors="replace") as f:
+                    content = f.read()
+            except OSError:
+                print(f"[warn] Could not read {rel_path}: {e}")
+                print(f"[hint] davfs2 mount? Try adding 'use_locks 0' to /etc/davfs2/davfs2.conf")
+                return None
+        else:
+            print(f"[warn] Could not read {rel_path}: {e}")
+            return None
 
     mtime = md_file.stat().st_mtime
     date_str = datetime.fromtimestamp(mtime).strftime("%Y-%m-%d")

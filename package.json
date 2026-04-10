@@ -1,6 +1,6 @@
 {
   "name": "aaak-vault-sync",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "Sync an Obsidian vault to AAAK memory format for LLM context loading",
   "license": "MIT",
   "engines": {
